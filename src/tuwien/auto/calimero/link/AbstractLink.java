@@ -36,6 +36,7 @@
 
 package tuwien.auto.calimero.link;
 
+import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.StringJoiner;
 
@@ -52,6 +53,7 @@ import tuwien.auto.calimero.KNXFormatException;
 import tuwien.auto.calimero.KNXIllegalArgumentException;
 import tuwien.auto.calimero.KNXTimeoutException;
 import tuwien.auto.calimero.Priority;
+import tuwien.auto.calimero.baos.BaosService;
 import tuwien.auto.calimero.cemi.CEMI;
 import tuwien.auto.calimero.cemi.CEMIDevMgmt;
 import tuwien.auto.calimero.cemi.CEMIFactory;
@@ -132,6 +134,28 @@ public abstract class AbstractLink<T extends AutoCloseable> implements KNXNetwor
 				final byte[] emi1 = e.getFrameBytes();
 				if (emi1 != null && BcuSwitcher.isEmi1GetValue(emi1[0] & 0xff))
 					return;
+
+				final int PeiIdentifyCon = 0xa8;
+				if (emi1 != null && (emi1[0] & 0xff) == PeiIdentifyCon) {
+					logger.info("PEI identify {}", DataUnitBuilder.toHex(emi1, " "));
+					final int manufacturer = unsigned(emi1[3], emi1[4]);
+					if (manufacturer == 0xc5) {
+						logger.info("link connected to weinzierl device");
+					}
+				}
+
+				// intercept object server services (baos)
+				if (emi1 != null && (emi1[0] & 0xff) == 0xf0) {
+					try {
+						final var baos = BaosService.from(ByteBuffer.wrap(emi1));
+						logger.info("baos {}", baos);
+						return;
+					}
+					catch (final Exception e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
 
 				final CEMI cemi = onReceive(e);
 				if (cemi instanceof CEMIDevMgmt)

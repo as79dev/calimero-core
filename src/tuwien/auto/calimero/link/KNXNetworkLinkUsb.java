@@ -221,6 +221,37 @@ public class KNXNetworkLinkUsb extends AbstractLink<UsbConnection>
 		}
 	}
 
+	void baosMode() throws KNXException, InterruptedException {
+		if (activeEmi == EmiType.CEmi) {
+			final int pidBaosSupport = 201;
+			final var check = new CEMIDevMgmt(CEMIDevMgmt.MC_PROPREAD_REQ, cemiServerObject, 1, pidBaosSupport, 1, 1);
+			conn.send(HidReport.create(activeEmi.emi, check.toByteArray()).get(0), true);
+			final boolean supported = responseFor(CEMIDevMgmt.MC_PROPREAD_CON, pidBaosSupport).isPresent();
+			if (!supported)
+				throw new KNXException("device does not support BAOS mode");
+
+			final var frame = BcuSwitcher.commModeRequest(BcuSwitcher.BaosMode);
+			conn.send(HidReport.create(KnxTunnelEmi.CEmi, frame).get(0), true);
+			responseFor(CEMIDevMgmt.MC_PROPWRITE_CON, BcuSwitcher.pidCommMode);
+
+			final var recheck = new CEMIDevMgmt(CEMIDevMgmt.MC_PROPREAD_REQ, cemiServerObject, 1,
+					BcuSwitcher.pidCommMode, 1, 1);
+			conn.send(HidReport.create(KnxTunnelEmi.CEmi, recheck.toByteArray()).get(0), true);
+			responseFor(CEMIDevMgmt.MC_PROPREAD_CON, BcuSwitcher.pidCommMode)
+					.ifPresent(mode -> logger.info("read comm mode {}", DataUnitBuilder.toHex(mode, "")));
+		}
+		// ??? check baos support ahead
+		else if (activeEmi == EmiType.Emi1) {
+			// NYI EMI1
+		}
+		else {
+			// NYI EMI2
+			final int PeiIdentifyReq = 0xa7;
+//			final int PeiIdentifyCon = 0xa8;
+			conn.send(HidReport.create(KnxTunnelEmi.Emi2, new byte[] { (byte) PeiIdentifyReq }).get(0), true);
+		}
+	}
+
 	private void normalMode() throws KNXPortClosedException, KNXTimeoutException, InterruptedException
 	{
 		if (activeEmi == EmiType.CEmi) {

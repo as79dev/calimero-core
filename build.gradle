@@ -93,6 +93,7 @@ test {
 //		excludeTags 'knxnetip'
 		testLogging {
 			exceptionFormat "full"
+			showStandardStreams true
 		}
 	}
 }
@@ -119,4 +120,5 @@ dependencies {
 	testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}"
 	testCompileOnly 'junit:junit:4.12'
 	testRuntimeOnly "org.junit.vintage:junit-vintage-engine:${junitJupiterVersion}"
+	testRuntimeOnly 'org.slf4j:slf4j-simple:1.8.0-beta4'
 }
