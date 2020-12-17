@@ -468,4 +468,9 @@ class DiscovererTest
 				withService(ServiceFamiliesDIB.CORE, 2));
 		assertThrows(ExecutionException.class, search::get);
 	}
+
+	@Test
+	void testAlexFirstSuccessTest() 	{
+		assertTrue(true);
+	}
 }
